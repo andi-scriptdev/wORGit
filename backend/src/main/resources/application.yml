@@ -1,0 +1,33 @@
+server:
+  port: ${PORT:8080}
+  # Behind a proxy the client IP (login rate limiting) comes from X-Forwarded-For.
+  forward-headers-strategy: framework
+
+spring:
+  application:
+    name: worgit-backend
+  datasource:
+    # e.g. jdbc:postgresql://HOST:5432/postgres?currentSchema=worgit
+    # Transaction pooler: add &prepareThreshold=0
+    url: ${WORGIT_DB_URL}
+    username: ${WORGIT_DB_USER}
+    password: ${WORGIT_DB_PASSWORD}
+    hikari:
+      maximum-pool-size: 5
+      connection-timeout: 5000          # fail fast -> DataStoreException -> SYS-03
+      initialization-fail-timeout: -1   # a paused database must not stop the server from starting
+      connection-init-sql: SET TIME ZONE 'Asia/Manila'
+  jackson:
+    time-zone: Asia/Manila
+    default-property-inclusion: non_null
+
+worgit:
+  jwt:
+    secret: ${WORGIT_JWT_SECRET}        # at least 32 bytes; never commit it
+    ttl: 8h                             # ASSUMED
+    issuer: worgit
+  login:
+    max-failures: 5                     # ASSUMED: per user id + client IP
+    window: 15m                         # ASSUMED
+  cors:
+    allowed-origins: ${WORGIT_CORS_ORIGINS:http://localhost:8081,http://localhost:19006}   # ASSUMED (Expo web dev)
