@@ -58,4 +58,19 @@ public final class Permissions {
             throw new ForbiddenException();
         }
     }
+
+    /** For the student-only actions. */
+    public static void requireStudent(AuthenticatedUser user) {
+        if (user.role() != Role.STUDENT) {
+            throw new ForbiddenException();
+        }
+    }
+
+    /**
+     * The organizations a staff member may see: null means all of them (System Administrator),
+     * otherwise the managed ones (possibly an empty set).
+     */
+    public static Set<UUID> visibleOrgIds(AuthenticatedUser user) {
+        return user.role() == Role.SYSTEM_ADMINISTRATOR ? null : user.managedOrgIds();
+    }
 }

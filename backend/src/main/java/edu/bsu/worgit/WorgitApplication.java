@@ -6,10 +6,11 @@ import java.util.TimeZone;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import edu.bsu.worgit.security.AppProperties;
-import org.springframework.context.annotation.Bean;
 import org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.Bean;
+
+import edu.bsu.worgit.security.AppProperties;
 
 @SpringBootApplication(exclude = UserDetailsServiceAutoConfiguration.class)
 @EnableConfigurationProperties(AppProperties.class)
@@ -28,4 +29,3 @@ public class WorgitApplication {
         return Clock.system(MANILA);
     }
 }
-

@@ -1,6 +1,7 @@
 package edu.bsu.worgit.repository;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -72,5 +73,19 @@ public class JdbcUserRepository implements UserRepository {
         }
         return Optional.of(new UserAccount(row.userId(), row.fullName(), row.displayName(),
                 row.email(), row.passwordHash(), role, managed));
+    }
+
+    @Override
+    public List<String> adminIdsManaging(UUID orgId, Role role) {
+        return jdbc.sql("""
+                SELECT a.user_id FROM admins a
+                  JOIN admin_managed_orgs m ON m.admin_id = a.user_id
+                 WHERE m.org_id = :org AND a.admin_role = :role
+                 ORDER BY a.user_id
+                """)
+                .param("org", orgId)
+                .param("role", role.name())
+                .query((rs, n) -> rs.getString("user_id"))
+                .list();
     }
 }
