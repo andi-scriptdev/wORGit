@@ -46,6 +46,51 @@ public final class Messages {
     public static final String INVALID_REQUEST = "A required value was missing or malformed.";
     public static final String SERVICE_ERROR = "Something went wrong on our side. Try again.";
 
+    // ---- slice 1B ----
+    public static final String NAME_REQUIRED = "Name is required.";   // from the spec (p27)
+
+    // ASSUMED wording
+    public static final String APPROVAL_REQUIRED = "This organization needs approval. Apply instead.";
+    public static final String NO_APPROVAL_NEEDED = "This organization does not need approval. Join instead.";
+    public static final String ALREADY_PENDING = "Your application is already pending.";
+    public static final String ALREADY_DECIDED = "This application was already decided.";
+    public static final String BAD_CATEGORY = "Choose a category from the list.";
+    public static final String FEE_NEGATIVE = "Membership fee cannot be negative.";
+    public static final String FEE_TOO_LARGE = "Membership fee is too large.";
+    public static final String BAD_SOCIAL_LINK = "Each social link needs a platform and a link starting with http:// or https://";
+    public static final String AMOUNT_POSITIVE = "Amount must be greater than 0.";
+    public static final String ALREADY_PAID = "This payment is already marked as paid.";
+
+    public static String notMember(String orgName) {
+        return sentence("You are not a member of " + orgName);
+    }
+
+    public static String studentNotMember(String studentName, String orgName) {
+        return sentence(studentName + " is not a member of " + orgName);
+    }
+
+    public static String nameTaken(String name) {
+        return sentence("An organization named " + name + " already exists");
+    }
+
+    public static String cannotRemoveOrg(String orgName, int certificates) {
+        return "Cannot remove " + orgName + ": " + certificates + " issued certificate"
+                + (certificates == 1 ? "" : "s") + " would be deleted.";
+    }
+
+    /** Student notification; the "approved" wording is from the v2 wireframe. */
+    public static String applicationDecided(String orgName, boolean approved) {
+        return "Application to " + orgName + " was " + (approved ? "approved" : "rejected");
+    }
+
+    public static String newApplication(String studentName, String orgName) {
+        return studentName + " applied to " + orgName;
+    }
+
+    public static String applicationDecidedForAdviser(String studentName, String orgName, boolean approved) {
+        return "Application of " + studentName + " to " + orgName + " was " + (approved ? "approved" : "rejected");
+    }
+
     private static String sentence(String text) {
         return text.endsWith(".") ? text : text + ".";
     }
