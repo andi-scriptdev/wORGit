@@ -95,6 +95,19 @@ public final class Messages {
         return text.endsWith(".") ? text : text + ".";
     }
 
+    // ---- slice 1C ----
+    // from the spec (section 7): the locked panel of an interest room the student has not picked
+    public static String interestRoomLocked(String interest) {
+        return interest + " is locked. Add this interest to your profile to join this room.";
+    }
+
+    /** The initiator's PEER_CONNECTION notification (spec section 6: "the initiator only"). */
+    public static String connected(String name) {
+        return sentence("You connected with " + name);
+    }
+
+    public static final String CURRENT_PASSWORD_WRONG = "Current password is incorrect.";   // ASSUMED (decision 4)
+
     public static String orgTextTooLong(String label) {
         return label + " must be 250 characters or fewer";
     }
