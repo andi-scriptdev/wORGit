@@ -108,6 +108,34 @@ public final class Messages {
 
     public static final String CURRENT_PASSWORD_WRONG = "Current password is incorrect.";   // ASSUMED (decision 4)
 
+    // ---- slice 1D ----
+    /** v2 wireframe (notifications): the student's ACHIEVEMENT notification. */
+    public static String achievementUnlocked(String title) {
+        return "Achievement unlocked: " + title;
+    }
+
+    // ASSUMED wording
+    public static final String TITLE_REQUIRED = "Title is required.";
+    public static final String DATE_REQUIRED = "Date is required.";
+    public static final String DELETE_TOO_LATE = "Events can only be deleted up to 3 days before their date.";   // your rule
+
+    public static String alreadyParticipant(String name) {
+        return sentence(name + " is already a participant");
+    }
+
+    public static String notParticipant(String name) {
+        return sentence(name + " is not a participant of this event");
+    }
+
+    public static String hasCertificate(String name) {
+        return sentence(name + " already has a certificate for this event, so this cannot be changed");
+    }
+
+    public static String eventHasCertificates(String title, int certificates) {
+        return "Cannot delete " + title + ": " + certificates + " issued certificate"
+                + (certificates == 1 ? "" : "s") + " would be deleted.";
+    }
+
     public static String orgTextTooLong(String label) {
         return label + " must be 250 characters or fewer";
     }
