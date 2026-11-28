@@ -22,6 +22,7 @@ import edu.bsu.worgit.domain.OrgInput;
 import edu.bsu.worgit.domain.OrgSummary;
 import edu.bsu.worgit.domain.Organization;
 import edu.bsu.worgit.domain.PaymentStatus;
+import edu.bsu.worgit.domain.PeopleRows;
 import edu.bsu.worgit.domain.Role;
 import edu.bsu.worgit.domain.Rows;
 import edu.bsu.worgit.domain.SocialLink;
@@ -34,7 +35,7 @@ import edu.bsu.worgit.repository.OrganizationRepository;
 import edu.bsu.worgit.repository.PaymentRepository;
 import edu.bsu.worgit.repository.UserRepository;
 
-/** An in-memory database behind every repository interface of slice 1B, for service tests. */
+/** An in-memory database behind the repository interfaces of slice 1B (and notifications), for service tests. */
 public class FakeWorld implements OrganizationRepository, MembershipRepository, ApplicationRepository,
         PaymentRepository, NotificationRepository, EventRepository, UserRepository {
 
@@ -63,6 +64,8 @@ public class FakeWorld implements OrganizationRepository, MembershipRepository, 
     private final List<Rows.Application> applications = new ArrayList<>();
     private final List<Rows.Payment> payments = new ArrayList<>();
     private final List<Note> notes = new ArrayList<>();
+    private final List<UUID> noteIds = new ArrayList<>();
+    private final Set<UUID> readNoteIds = new java.util.HashSet<>();
     private final List<Map.Entry<UUID, Rows.Event>> events = new ArrayList<>();
     private final Map<UUID, Integer> certificates = new HashMap<>();
     private final Map<String, UserAccount> accounts = new HashMap<>();
@@ -92,6 +95,11 @@ public class FakeWorld implements OrganizationRepository, MembershipRepository, 
                 "hash", role, Set.of(managed));
         accounts.put(id, a);
         return AuthenticatedUser.from(a);
+    }
+
+    /** Adds or replaces an account (used by FakePeople for students with chosen display names). */
+    public void putAccount(UserAccount account) {
+        accounts.put(account.userId(), account);
     }
 
     public void addEvent(UUID orgId, String title, LocalDate date) {
@@ -391,6 +399,42 @@ public class FakeWorld implements OrganizationRepository, MembershipRepository, 
     @Override
     public void insertNotification(String recipientId, NotificationType type, String message) {
         notes.add(new Note(recipientId, type, message));
+        noteIds.add(UUID.randomUUID());
+    }
+
+    /** Newest first; insertion order stands in for created_at (one second apart). */
+    @Override
+    public List<PeopleRows.Notification> listNotifications(String recipientId, int limit) {
+        List<PeopleRows.Notification> result = new ArrayList<>();
+        for (int i = notes.size() - 1; i >= 0 && result.size() < limit; i--) {
+            Note n = notes.get(i);
+            if (n.recipientId().equals(recipientId)) {
+                result.add(new PeopleRows.Notification(noteIds.get(i), n.type(), n.message(),
+                        java.time.Instant.parse("2026-11-24T02:00:00Z").plusSeconds(i), readNoteIds.contains(noteIds.get(i))));
+            }
+        }
+        return result;
+    }
+
+    @Override
+    public int unreadCount(String recipientId) {
+        int count = 0;
+        for (int i = 0; i < notes.size(); i++) {
+            if (notes.get(i).recipientId().equals(recipientId) && !readNoteIds.contains(noteIds.get(i))) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    @Override
+    public boolean markRead(UUID notificationId, String recipientId) {
+        int i = noteIds.indexOf(notificationId);
+        if (i < 0 || !notes.get(i).recipientId().equals(recipientId)) {
+            return false;
+        }
+        readNoteIds.add(notificationId);
+        return true;
     }
 
     @Override
