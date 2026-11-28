@@ -3,3 +3,6 @@ target/
 *.iml
 .env
 .worgit-local.json
+# keep account and seed scripts (they can hold passwords) out of git; the schema stays versioned
+*.sql
+!db/worgit_schema_empty.sql
