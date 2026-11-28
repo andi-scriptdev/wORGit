@@ -1,15 +1,39 @@
 -- =====================================================================
--- wORGit EMPTY schema  (PostgreSQL 13+ / Supabase)   
+-- wORGit EMPTY schema  (PostgreSQL 13+ / Supabase)   file 1 of 2
+-- Creates a dedicated schema "worgit" with all 20 tables and ZERO rows.
+-- Same tables, constraints and triggers as worgit_schema.sql (tested on PostgreSQL 16).
+-- Then run worgit_seed_required.sql once (5 interests, Lobby, 5 interest rooms).
+--
+-- Spring Boot: add  ?currentSchema=worgit  to the JDBC URL.
+-- Start over at any time (deletes everything in the schema):
+--     DROP SCHEMA worgit CASCADE;
+-- Tags: [C] class diagram/wireframes, [D] your decisions, [A] assumed default.
+-- Removed on purpose: icebreakers, typing state, registration, salt column.
 -- =====================================================================
 BEGIN;
+
+-- Stop with a clear message if this file was already run (it is not meant to run twice).
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'worgit') THEN
+    RAISE EXCEPTION 'Schema worgit already has tables. To start over, run  DROP SCHEMA worgit CASCADE;  and then run this file again. To keep what is there, skip this file.';
+  END IF;
+END $$;
 
 CREATE SCHEMA IF NOT EXISTS worgit;
 SET LOCAL search_path TO worgit;
 
+-- ---------- fixed lists ------------------------------------------------
+-- [C] the UI shows exactly these five interests; organizations.interest_name uses the same five [D].
 CREATE TABLE interest_options (
   name text PRIMARY KEY
 );
+-- (no rows here: the five interests are in worgit_seed_required.sql)
 
+-- ---------- users (abstract User -> Student | Admin) --------------------
+-- Everyone logs in with user_id: student 'YY-XXXXX' (e.g. 23-10457), admin 'ADM-###'.  [C]
+-- password_hash holds a full BCrypt string (salt included); the diagram's separate
+-- `salt` column is therefore not needed.  [A]
 CREATE TABLE users (
   user_id       text PRIMARY KEY,
   user_type     text NOT NULL CHECK (user_type IN ('STUDENT', 'ADMIN')),
@@ -47,10 +71,13 @@ CREATE TABLE student_interests (
   PRIMARY KEY (user_id, interest)
 );
 
+-- ---------- organizations ----------------------------------------------
+-- [D] System Admin adds/edits; org profile has logo, cover photo, description,
+-- interests, contact details and social links. Exact contact fields are [A].
 CREATE TABLE organizations (
   org_id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   name              text NOT NULL UNIQUE,                 -- "Name is required." [C]; uniqueness [A]
-  category          text NOT NULL REFERENCES interest_options(name),
+  interest_name     text NOT NULL REFERENCES interest_options(name),   -- the PDF's "Category" [D]
   description       text NOT NULL DEFAULT '',
   logo_url          text,                                 -- [D]
   cover_photo_url   text,                                 -- [D]
@@ -250,3 +277,25 @@ END $$;
 
 
 COMMIT;
+
+-- =====================================================================
+-- HOW TO ADD ACCOUNTS (all users just log in; the app routes by role)
+-- 0) Run  SET search_path TO worgit;  first (or write worgit.users, worgit.students ...).
+-- 1) Make a BCrypt hash. On Supabase (pgcrypto lives in the "extensions" schema):
+--      SELECT extensions.crypt('TempPass123', extensions.gen_salt('bf', 10));
+--    Spring's BCryptPasswordEncoder verifies these ($2a$) hashes. Test one login first.
+-- 2) Insert the user, then the role row. Examples (commented out):
+--
+-- INSERT INTO users (user_id, user_type, full_name, display_name, email, password_hash)
+-- VALUES ('ADM-001', 'ADMIN', 'Prof. Reyes', 'Prof. Reyes', 'reyes@batstate-u.edu.ph', '<bcrypt hash>');
+-- INSERT INTO admins (user_id, admin_role) VALUES ('ADM-001', 'FACULTY_ADVISER');
+--   admin_role: ORGANIZATION_FACILITATOR | FACULTY_ADVISER | SYSTEM_ADMINISTRATOR
+-- -- facilitators/advisers: link them to the organizations they handle
+-- INSERT INTO admin_managed_orgs (admin_id, org_id)
+--   SELECT 'ADM-001', org_id FROM organizations WHERE name = 'Web Developers Guild';
+--
+-- INSERT INTO users (user_id, user_type, full_name, display_name, email, password_hash)
+-- VALUES ('23-10457', 'STUDENT', 'Alex Rivera', 'Alex R.', 'alex.rivera@g.batstate-u.edu.ph', '<bcrypt hash>');
+-- INSERT INTO students (user_id) VALUES ('23-10457');
+-- INSERT INTO student_interests (user_id, interest) VALUES ('23-10457', 'Technology');
+-- =====================================================================

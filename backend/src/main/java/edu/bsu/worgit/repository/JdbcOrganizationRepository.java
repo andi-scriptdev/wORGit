@@ -17,6 +17,10 @@ import edu.bsu.worgit.domain.Organization;
 import edu.bsu.worgit.domain.Rows;
 import edu.bsu.worgit.domain.SocialLink;
 
+/**
+ * organizations.interest_name is the organization's category (one of the five interests); the Java and JSON
+ * name stays "category", as in the spec.
+ */
 @Repository
 public class JdbcOrganizationRepository implements OrganizationRepository {
 
@@ -32,7 +36,7 @@ public class JdbcOrganizationRepository implements OrganizationRepository {
             return List.of();
         }
         StringBuilder sql = new StringBuilder("""
-                SELECT o.org_id, o.name, o.category, o.logo_url, o.cover_photo_url, o.requires_approval,
+                SELECT o.org_id, o.name, o.interest_name AS category, o.logo_url, o.cover_photo_url, o.requires_approval,
                        o.membership_fee,
                        (SELECT count(*) FROM org_members m WHERE m.org_id = o.org_id) AS member_count
                   FROM organizations o
@@ -48,7 +52,7 @@ public class JdbcOrganizationRepository implements OrganizationRepository {
             params.put("text", SqlUtil.likePattern(text));
         }
         if (category != null) {
-            sql.append(" AND o.category = :category");
+            sql.append(" AND o.interest_name = :category");
             params.put("category", category);
         }
         sql.append(" ORDER BY o.name");
@@ -69,7 +73,7 @@ public class JdbcOrganizationRepository implements OrganizationRepository {
     @Override
     public Optional<Organization> findOrganization(UUID orgId) {
         Optional<Organization> base = jdbc.sql("""
-                SELECT o.org_id, o.name, o.category, o.description, o.logo_url, o.cover_photo_url,
+                SELECT o.org_id, o.name, o.interest_name AS category, o.description, o.logo_url, o.cover_photo_url,
                        o.contact_email, o.contact_phone, o.requires_approval, o.membership_fee,
                        (SELECT count(*) FROM org_members m WHERE m.org_id = o.org_id) AS member_count
                   FROM organizations o
@@ -111,7 +115,7 @@ public class JdbcOrganizationRepository implements OrganizationRepository {
     @Override
     public UUID insertOrganization(OrgInput in) {
         UUID id = jdbc.sql("""
-                INSERT INTO organizations (name, category, description, contact_email, contact_phone,
+                INSERT INTO organizations (name, interest_name, description, contact_email, contact_phone,
                                            requires_approval, membership_fee)
                 VALUES (:name, :category, :description, :email, :phone, :approval, :fee)
                 RETURNING org_id
@@ -133,7 +137,7 @@ public class JdbcOrganizationRepository implements OrganizationRepository {
     public void updateOrganization(UUID orgId, OrgInput in) {
         jdbc.sql("""
                 UPDATE organizations
-                   SET name = :name, category = :category, description = :description,
+                   SET name = :name, interest_name = :category, description = :description,
                        contact_email = :email, contact_phone = :phone,
                        requires_approval = :approval, membership_fee = :fee
                  WHERE org_id = :id
